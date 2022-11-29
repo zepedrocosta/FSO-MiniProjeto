@@ -31,9 +31,19 @@ void super_debug(struct IMsuper *imSB, unsigned int dbg);
  ***/
 static void super_create(struct super *sb, unsigned int nblocks, \
                   unsigned int sizeInArea, unsigned int clusterSize) {
-    //sb->fsmagic = 
-    //  etc
-    /*** TODO ***/
+    sb->fsmagic = FS_MAGIC; 
+    sb->nblocks = nblocks;
+    sb->startInBmap = BMi_OFFSET; // ?
+    sb->sizeInBmap = 1; // ?
+    sb->startInArea = SB_OFFSET + 2;
+    sb->sizeInArea = sizeInArea;
+    sb->ninodes = INODES_PER_BLK * nblocks;
+    sb->startDtBmap = SB_OFFSET + 2 + sizeInArea;
+    sb->sizeDtBmap = 1;
+    sb->clusterSize = clusterSize;
+    sb->startDtArea = ; //1 byte map dá para 512 clusters 
+    sb->nclusters = ;
+    sb->mounted = NOTMOUNTED;
 }
 
 
