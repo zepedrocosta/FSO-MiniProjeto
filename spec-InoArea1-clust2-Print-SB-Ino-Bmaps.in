@@ -1,0 +1,53 @@
+###
+#This spec creates and formats a disk
+#writes some bytemap entries and prints the tables
+D disk0 100
+#Format args[1]= disk name, args[2]= sizeInArea,
+#	args[3]= clusterSize
+F disk0 1 2
+#Mount disk args[1]= disk name args[2]= debug if 1, not if 0
+M disk0 1
+#Print inodes bytemap
+B 0
+#Print data blocks bytemap
+B 1
+#Set some bytemap entries args[1]= 0 INODE_BMAP 1 DATA_BMAP
+#			  args[2]= entry args[3]= value2set
+#on inodes bmap
+s 0 15 1
+s 0 31 1
+#on data bmap
+s 1 0 1
+s 1 17 1
+s 1 34 1
+#the next set should raise an error if clusters=2
+s 1 95 1
+#Print inodes bytemap
+B 0
+#Print data blocks bytemap
+B 1
+#on inodes bmap
+s 0 15 0
+s 0 31 0
+#on data bmap
+s 1 0 0
+s 1 17 0
+s 1 34 0
+#the next set should raise an error if clusters=2
+s 1 95 0
+#Print inodes bytemap
+B 0
+#Print data blocks bytemap
+B 1
+#Print inodes
+I 0
+#Allocate i-node: Write an inode
+a 0 0
+I 1
+a 0 1
+I 1
+a 31 1
+I 1
+#
+#
+U
