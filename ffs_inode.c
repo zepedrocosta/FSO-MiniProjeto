@@ -18,11 +18,11 @@ extern struct disk_operations disk_ops;
 static int inode_location(unsigned int numinode, \
                  unsigned int *numblock, unsigned int *offset) {
 
-    if (numinode >= /*** TODO ***/ 0)
+    if (numinode >= super_ops.getTotalInodes(&ffs_IMsb.sb))
         return -EINVAL;
 
-    *numblock =  /*** TODO ***/ 0;
-    *offset =  /*** TODO ***/ 0;
+    *numblock =  0;
+    *offset =  INODE_OFFSET(super_ops.getStartInArea(&ffs_IMsb.sb));
 
     return 0;
 }
@@ -86,7 +86,7 @@ int inode_print_table(int validOnly) {
      @out: pointer to inode structure
 ***/
 static void inode_init(struct inode *in) {
-    //memset( /*** TODO ***/ );
+    memset(in, 0, sizeof(struct inode));
 }
 
 /***
@@ -102,7 +102,7 @@ static int inode_update(const unsigned int numinode, const struct inode *in) {
     unsigned int block, offset;
     union u_inoBlk i_b;
 
-    //if (inode_location( /*** TODO ***/ ) < 0) return -EINVAL;
+    if (inode_location(i_b.ino->size, block, offset) < 0) return -EINVAL;
 
     // read inode block from disk into local mem
     /*** TODO ***/

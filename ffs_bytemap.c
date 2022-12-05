@@ -109,7 +109,7 @@ static void bytemap_mount(struct super *sb)
 
   blockStart = super_ops.getStartDtBmap(sb);
   blockEnd = blockStart + super_ops.getSizeDtBmap(sb) - 1;
-  entriesLeft = super_ops.getNclusters(sb); //  ????
+  entriesLeft = super_ops.getNclusters(sb);
   bmapMD[DATA_BMAP].BMbStart = blockStart;
   bmapMD[DATA_BMAP].BMbEnd = blockEnd;
   bmapMD[DATA_BMAP].BMentries = entriesLeft;
@@ -135,8 +135,8 @@ static int bytemap_getfree(unsigned int bmapIDX)
 
   if (bmapIDX == INODE_BMAP)
   {
-    blockStart = super_ops.getStartInBmap(&ffs_IMsb.sb);
-    blockEnd = blockStart + super_ops.getSizeInBmap(&ffs_IMsb.sb) - 1;;
+    blockStart = bmapMD[INODE_BMAP].BMbStart;
+    blockEnd = blockStart + super_ops.getSizeInBmap(&ffs_IMsb.sb) - 1;
     entriesLeft = super_ops.getTotalInodes(&ffs_IMsb.sb);
   }
   else
@@ -152,11 +152,28 @@ static int bytemap_getfree(unsigned int bmapIDX)
     if (ercode < 0)
       return ercode;
 
-    /*** TOD find a free entry and, if found, return it ***/
-    if(block == FREE)
-      return block;
-
-    entriesLeft -= MIN(entriesLeft, DISK_BLOCK_SIZE);
+    /*** TODO find a free entry and, if found, return it ***/
+    if (bmapIDX == INODE_BMAP)
+    {
+      for (int i = 0; i <= DISK_BLOCK_SIZE; i += INODE_SIZE)
+      {
+        if (bmap[i] == 0)
+        {
+          freeEntry = bmap[i];
+        }
+      }
+    }
+    else
+    {
+      for (int i = 0; i <= DISK_BLOCK_SIZE; i += ffs_IMsb.sb.clusterSize)
+      {
+        if (bmap[i] == 0)
+        {
+          freeEntry = bmap[i];
+        }
+      }
+    }
+    return freeEntry;
   }
 
   assert(entriesLeft == 0);
@@ -185,7 +202,7 @@ static int bytemap_set(unsigned int bmapIDX, unsigned int entry,
   if (bmapIDX == INODE_BMAP)
   {
     blockStart = super_ops.getStartInBmap(&ffs_IMsb.sb);
-    blockEnd = blockStart + super_ops.getSizeInBmap(&ffs_IMsb.sb) - 1;;
+    blockEnd = blockStart + super_ops.getSizeInBmap(&ffs_IMsb.sb) - 1;
     entriesLeft = super_ops.getTotalInodes(&ffs_IMsb.sb);
   }
   else
@@ -199,21 +216,24 @@ static int bytemap_set(unsigned int bmapIDX, unsigned int entry,
     return -EINVAL;
 
   // Locate the block where the entry is stored
-  unsigned int block = bmap[entry];
-  if (block > (blockEnd - blockStart))
-    return -EINVAL;
-
+  unsigned int block;
+  if (bmapIDX == INODE_BMAP)
+  {
+    block = (double) entry / (double) INODES_PER_BLK;
+  } else {
+    block = (double) entry / (double) DISK_BLOCK_SIZE;
+  }
   // Read the block
-  ercode = disk_ops.read(block , bmap, 1);
+  ercode = disk_ops.read((block + blockStart), bmap, 1);
   if (ercode < 0)
     return ercode;
 
   // Compute the entry's offset within the block and set its value
-  unsigned int offset = /*** TODO ***/ 0;
+  unsigned int offset = (entry % DISK_BLOCK_SIZE);
   bmap[offset] = set;
 
   // Write back the changed value
-  ercode = disk_ops.write(/*** TODO ***/ , bmap, 1);
+  ercode = disk_ops.write((block + blockStart), bmap, 1);
   if (ercode < 0)
     return ercode;
 
