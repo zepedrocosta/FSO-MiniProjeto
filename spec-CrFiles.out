@@ -1,0 +1,140 @@
+D disk0 100	Create OK
+F disk0	1	1	Formatting...
+In-Memory Superblock:
+  dirty            = no
+  fsmagic          = 0xf0f03410
+  nblocks          = 100
+  startInBmap      = 1
+  sizeInBmap       = 1
+  startInArea      = 2
+  sizeInArea       = 1
+  ninodes          = 32
+  startDtBmap      = 3
+  sizeDtBmap       = 1
+  clusterSize      = 1
+  startDtArea      = 4
+  nclusters        = 96
+  mounted          = no
+In-Memory Superblock:
+  dirty            = no
+  fsmagic          = 0xf0f03410
+  nblocks          = 100
+  startInBmap      = 1
+  sizeInBmap       = 1
+  startInArea      = 2
+  sizeInArea       = 1
+  ninodes          = 32
+  startDtBmap      = 3
+  sizeDtBmap       = 1
+  clusterSize      = 1
+  startDtArea      = 4
+  nclusters        = 96
+  mounted          = yes
+Printing the inode bytemap ----------
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Printing the data blocks bytemap ----------
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Name: . inode: 0
+Name: .. inode: 0
+Open a dir: Y 1 -1	ERROR
+In-Memory Superblock:
+  dirty            = no
+  fsmagic          = 0xf0f03410
+  nblocks          = 100
+  startInBmap      = 1
+  sizeInBmap       = 1
+  startInArea      = 2
+  sizeInArea       = 1
+  ninodes          = 32
+  startDtBmap      = 3
+  sizeDtBmap       = 1
+  clusterSize      = 1
+  startDtArea      = 4
+  nclusters        = 96
+  mounted          = no
+In-Memory Superblock:
+  dirty            = no
+  fsmagic          = 0xf0f03410
+  nblocks          = 100
+  startInBmap      = 1
+  sizeInBmap       = 1
+  startInArea      = 2
+  sizeInArea       = 1
+  ninodes          = 32
+  startDtBmap      = 3
+  sizeDtBmap       = 1
+  clusterSize      = 1
+  startDtArea      = 4
+  nclusters        = 96
+  mounted          = yes
+Name: . inode: 0
+Name: .. inode: 0
+Open a dir: Y 1 -1	ERROR
+Name: . inode: 0
+Name: .. inode: 0
+Name: File1 inode: 1
+Open a dir: Y 1 -1	ERROR
+Printing the inode bytemap ----------
+1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Printing the data blocks bytemap ----------
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Name: . inode: 0
+Name: .. inode: 0
+Name: File1 inode: 1
+Name: File2 inode: 2
+Open a dir: Y 1 -1	ERROR
+Printing the inode bytemap ----------
+1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Printing the data blocks bytemap ----------
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Name: . inode: 0
+Name: .. inode: 0
+Name: File1 inode: 1
+Name: File2 inode: 2
+Name: File3 inode: 3
+Open a dir: Y 1 -1	ERROR
+Printing the inode bytemap ----------
+1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Printing the data blocks bytemap ----------
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Name: . inode: 0
+Name: .. inode: 0
+Name: File1 inode: 1
+Name: File2 inode: 2
+Name: File3 inode: 3
+Name: File4 inode: 4
+Open a dir: Y 1 -1	ERROR
+Printing the inode bytemap ----------
+1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+Printing the data blocks bytemap ----------
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0

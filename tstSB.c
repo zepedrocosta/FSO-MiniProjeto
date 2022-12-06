@@ -1,5 +1,3 @@
-//Ficheiro para correr os testes (MAIN)
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,6 +17,14 @@ extern struct inode_operations inode_ops;
 extern struct bmapMData bmapMD[NBR_OF_BMAPS];
 extern struct bytemap_operations bmap_ops;
 
+#include "ffs_file.h"
+extern struct ffs_file_operations ffs_file_ops;
+
+#include "bfs_dir.h"
+extern struct dir_operations bfs_dir_ops;
+extern struct IMdirectory cwd;
+
+#include "bfs_lib.h"
 
 /***
   Create or Open a disk. Do not use Open because we now Close the disk here
@@ -95,7 +101,6 @@ void format(char *diskname, unsigned int sizeInArea,\
   }
 
 /*
-  	MISSING MISSING MISSING MISSING MISSING MISSING MISSING
 	MISSING clean of ?data?
 */
 
@@ -106,6 +111,7 @@ void format(char *diskname, unsigned int sizeInArea,\
     printf( "format():disk_ops.close %s\n", strerror(-ercode) );
   }
 }
+
 /***
   Format a disk
   args[0]= F, args[1]= disk name, args[2]= sizeInArea, args[3]= clusterSize
@@ -138,6 +144,8 @@ void run_M(int argc, char* args[]) {
   }
 
   bmap_ops.mount(&ffs_IMsb.sb);
+  ffs_file_ops.mount();
+  bfs_dir_ops.mount(&cwd);
 }
 
 
@@ -231,6 +239,190 @@ void run_I(int argc, char* args[]) {
 }
 
 
+/***
+   create a fIle
+   args[0]= i, args[1]= 0 REG file 1 DIR file
+***/
+void run_i(int argc, char* args[]) {
+  int ercode;
+
+  ercode= ffs_file_ops.create(atoi(args[1]));
+  if (ercode < 0) {
+    printf("file create: %s %s\tERROR\n",args[0],args[1]);
+    return;
+  }
+}
+
+/***
+   delete/Unlink a file (regular or dir)
+   args[0]= u, args[1]= inode number
+   DOES NOT CHECK if DIRs are EMPTY
+***/
+void run_u(int argc, char* args[]) {
+  int ercode;
+
+  ercode= ffs_file_ops.unlink(atoi(args[1]));
+  if (ercode < 0) {
+    printf("file delete: %s %s\tERROR\n",args[0],args[1]);
+    return;
+  }
+}
+
+
+/***
+   open a file
+   args[0]= o, args[1]= inode number
+***/
+void run_o(int argc, char* args[]) {
+  int ercode;
+
+  ercode= ffs_file_ops.open(atoi(args[1]));
+  if (ercode < 0) {
+    printf("file open: %s %s\tERROR\n",args[0],args[1]);
+    return;
+  }
+}
+
+/***
+   close a file or directory FFS, no special dir processing
+				perhaps not to use for dirs?
+   args[0]= o, args[1]= fd
+***/
+void run_c(int argc, char* args[]) {
+  int ercode;
+
+  ercode= ffs_file_ops.close(atoi(args[1]));
+  if (ercode < 0) {
+    printf("file close: %s %s\tERROR\n",args[0],args[1]);
+    return;
+  }
+}
+
+
+/***
+   write a buf to a file
+   args[0]= W, args[1]= fd  args[2]= <char> args[3]= I/O size
+***/
+void run_W(int argc, char* args[]) {
+  int ercode;
+  char buffer[atoi(args[3])];
+  memset( buffer, args[2][0], atoi(args[3]) );
+
+  ercode= ffs_file_ops.write(atoi(args[1]), buffer, atoi(args[3]));
+  if (ercode < 0) {
+    printf("file write: %s %s %s %s\tERROR\n",args[0],args[1],args[2],args[3]);
+    return;
+  }
+}
+
+void printBuffer(char *buffer, int len) {
+  int i;
+
+  printf("Read buffer:\n");
+  for (i= 0; i < len; i++)
+    if ( (i+1)%16 ) printf("%c ", buffer[i]);
+    else printf("%c\n", buffer[i]);
+
+  if ( i%16 ) printf("\n"); // last NL for general case
+}
+
+/***
+   read to a buf from a file
+   args[0]= R, args[1]= fd  args[2]= I/O size
+***/
+void run_R(int argc, char* args[]) {
+  int ercode;
+  char buffer[atoi(args[2])];
+  memset( buffer, 0, atoi(args[2]) );
+
+  ercode= ffs_file_ops.read(atoi(args[1]), buffer, atoi(args[2]));
+  if (ercode < 0) {
+    printf("file read: %s %s %s\tERROR\n",args[0],args[1],args[2]);
+    return;
+  }
+
+  printBuffer(buffer, atoi(args[2]));
+}
+
+/***
+   create the rooT directory on disk
+   args[0]= T,  args[1]= is rootdir? (1,0) args[2]= parent dir inode
+***/
+void run_T(int argc, char* args[]) {
+  int ercode;
+
+  ercode= bfs_dir_ops.mkEmptydir(atoi(args[1]), atoi(args[2]));
+  if (ercode < 0) {
+    printf("Create ROOT dir: %s %s %s\tERROR\n",args[0], args[1], args[2]);
+    return;
+  }
+}
+
+/***
+   open a a file by name
+   args[0]= O,  args[1]= filename
+***/
+void run_O(int argc, char* args[]) {
+  int ercode;
+
+  ercode= bfs_dir_ops.openF(&cwd, args[1]);
+  if (ercode < 0) {
+    printf("Open a file by name: %s %s\tERROR\n",args[0], args[1]);
+    return;
+  }
+}
+
+/***
+   Print directory entries
+   args[0]= Y,  args[1]= 0: all, 1: valid
+***/
+void run_Y(int argc, char* args[]) {
+  int ercode;
+  struct dentry de;
+
+  for(;;) {
+    ercode= bfs_dir_ops.readdir(&cwd, &de);
+    if (ercode < 0) {
+      printf("Open a dir: %s %s %d\tERROR\n",args[0], args[1], ercode);
+      break;
+    } else {
+     if (!atoi(args[1])) printf("Name: %s inode: %d\n", de.name, de.inoNbr);
+     else
+      if (strlen(de.name)) printf("Name: %s inode: %d\n", de.name, de.inoNbr);
+    }
+  }
+  bfs_dir_ops.rewinddir(&cwd);
+}
+
+/***
+   create dirEctory by name
+   args[0]= e,  args[1]= name
+***/
+void run_e(int argc, char* args[]) {
+  int ercode;
+
+  ercode= bfs_mkdir(args[1]);
+  if (ercode < 0) {
+    printf("Create a dir: %s %s\tERROR\n",args[0], args[1]);
+    return;
+  }
+}
+
+/***
+   create File by name
+   args[0]= e,  args[1]= name
+***/
+void run_f(int argc, char* args[]) {
+  int ercode;
+
+  ercode= bfs_create(args[1]);
+  if (ercode < 0) {
+    printf("Create a dir: %s %s\tERROR\n",args[0], args[1]);
+    return;
+  }
+}
+
+
 void runcommand(int argc, char* args[]){
 
   switch (args[0][0]) {
@@ -265,14 +457,61 @@ void runcommand(int argc, char* args[]){
       run_I(argc, args);
       break;
 
-    case '#': // Comment line
+    case 'i': // Create a FFS file (REG or DIR)
+      run_i(argc, args);
+      break;
+    case 'u': // Delete a FFS file
+      run_u(argc, args);
+      break;
+    case 'o': // Open a FFS file (by inode)
+      run_o(argc, args);
+      break;
+    case 'c': // Close a FFS file
+      run_c(argc, args);
+      break;
+    case 'W': // Write on a FFS file
+      run_W(argc, args);
+      break;
+    case 'R': // Read from a FFS file
+      run_R(argc, args);
+      break;
+    case 'T': // create a directory
+      run_T(argc, args);
+      break;
+    case 'O': // Open file, by name
+      run_O(argc, args);
+      break;
+    case 'Y': // Print valid/all directory entries
+      run_Y(argc, args);
       break;
 
+    case 'e': // Create a directory by name
+      run_e(argc, args);
+      break;
+    case 'f': // Create a file by name
+      run_f(argc, args);
+      break;
+
+/*
+    case 'C': // Cd to new dir, close current dir, flush to disk
+      run_C(argc, args);
+      break;
+
+    case 't': // Delete a directory entry
+      run_t(argc, args);
+      break;
+*/
+    case 'Z': // print small line
+      printf("%s\n", args[1]);
+      break;
+    case '#': // Comment line
+      break;
     default:
       printf("WRONG SPEC FILE?\n");
       break;
   }
 }
+
 
 /************************* MAIN & related code ***************************/
 

@@ -75,7 +75,7 @@ struct IMsuper {
     errors:
      those from disk driver
 
-  umount: flush the superblock to disk and wipes the in-mem image
+  umount: flush the superblock to disk
     parameters:
      @in: pointer to in-mem superblock
     errors:
@@ -86,7 +86,7 @@ struct IMsuper {
     returns: unsigned int value or address of region
 
   NOTE: dirty "bit" of in-memory SB must be set/cleared separately
-	NOT used when there is NO support for cache
+	NOT used when there is NO support for cache 
 */
 
 

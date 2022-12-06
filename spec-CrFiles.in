@@ -1,0 +1,48 @@
+###
+#This spec creates and formats a disk
+#writes some bytemap entries and prints the tables
+D disk0 100
+
+#Format args[1]= disk name, args[2]= sizeInArea,
+#	args[3]= clusterSize
+F disk0 1 1
+
+#Mount disk args[1]= disk name args[2]= debug if 1, not if 0
+M disk0 1
+
+#Print inodes bytemap
+B 0
+#Print data blocks bytemap
+B 1
+
+# Print vakid names in dir
+Y 1
+
+U
+
+M disk0 1
+#Mount should have mounted the /,
+
+Y 1
+
+f File1
+Y 1
+B 0
+B 1
+
+f File2
+Y 1
+B 0
+B 1
+
+f File3
+Y 1
+B 0
+B 1
+
+f File4
+Y 1
+B 0
+B 1
+
+U
