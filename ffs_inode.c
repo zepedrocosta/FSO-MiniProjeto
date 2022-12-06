@@ -15,15 +15,15 @@ extern struct disk_operations disk_ops;
 /* inode (global) number is decomposed into inode block number
    and offset within that block. The inode block number starts at 0
 */
-static int inode_location(unsigned int numinode, \
-                 unsigned int *numblock, unsigned int *offset) 
+static int inode_location(unsigned int numinode,
+                          unsigned int *numblock, unsigned int *offset)
 {
 
-  if (numinode >= super_ops.getTotalInodes(&ffs_IMsb.sb))
+  if (numinode >= super_ops.getTotalInodes)
     return -EINVAL;
 
-  *numblock = super_ops.getStartInArea(&ffs_IMsb.sb); //TODO
-  *offset = INODE_OFFSET(&ffs_IMsb.sb);
+  *numblock = numinode / INODES_PER_BLK;
+  *offset = numinode - (INODES_PER_BLK * (*numblock));
 
   return 0;
 }
@@ -101,7 +101,7 @@ static void inode_init(struct inode *in)
     errors:
      those resulting from disk operations
 ***/
-static int inode_update(const unsigned int numinode, const struct inode *in) //com erros provavelmente
+static int inode_update(const unsigned int numinode, const struct inode *in) // com erros provavelmente
 {
   int ercode;
   unsigned int block, offset;
@@ -111,15 +111,15 @@ static int inode_update(const unsigned int numinode, const struct inode *in) //c
     return -EINVAL;
 
   // read inode block from disk into local mem
-  ercode = disk_ops.read(numinode, i_b.data, 1);
+  ercode = disk_ops.read(block, &i_b.data, 1);
   if (ercode < 0)
     return ercode;
 
   // merge inode into block
-  memcpy(&block, in, sizeof(struct inode));
+  memcpy(&i_b.ino[offset], in, INODE_SIZE);
 
   // write inode block to disk
-  ercode = disk_ops.write(block, i_b.data, 1);
+  ercode = disk_ops.write(block, &i_b.data, 1);
   if (ercode < 0)
     return ercode;
 
@@ -144,12 +144,12 @@ static int inode_read(unsigned int numinode, struct inode *in)
     return -EINVAL;
 
   // read inode block from disk into local mem
-  ercode = disk_ops.read(block, i_b.data, 1);
+  ercode = disk_ops.read(block, &i_b.data, 1);
   if (ercode < 0)
     return ercode;
 
   // extract inode from block
-  memcpy(in, i_b.data, sizeof(i_b.data));
+  memcpy(in, &i_b.ino[offset], INODE_SIZE);
 
   return 0;
 }
@@ -170,10 +170,10 @@ int inode_clear(struct super *sb)
   unsigned char data[DISK_BLOCK_SIZE];
   memset(data, 0, DISK_BLOCK_SIZE);
 
-  unsigned int start = /*** TODO ***/ 0;
-  unsigned int end = /*** TODO ***/ 0;
+  unsigned int start = super_ops.getStartInArea(sb);
+  unsigned int end = (super_ops.getStartDtBmap(sb) - 1);
   for (int block = start; block < end; block++)
-    if ((ercode = /*** TODO ***/ 0) < 0)
+    if ((ercode = disk_ops.write(block, data ,1)) < 0)
       return ercode;
 
   return 0;
