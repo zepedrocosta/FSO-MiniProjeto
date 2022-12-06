@@ -13,7 +13,7 @@ struct disk_operations {
 };
 
 /*
-		Only ONE didk mounted at a time
+		Only ONE disk mounted at a time
 
 Synopsis:	open(char *filename, unsigned int n) 
 Description:	If the file (“disk”) named <filename> does not exist, it
