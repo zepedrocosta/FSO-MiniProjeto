@@ -257,7 +257,12 @@ static int ffs_file_write(const int fd, const void *buffer,\
   if (ercode < 0) return ercode; // This would be a bug!
 
   // Dont forget to update the bmap, if a new cluster was allocated
-  /*** TODO ***/
+  ercode=bmap_ops.getfree(DATA_BMAP);
+
+  if (ercode < 0) return ercode;
+  unsigned int inode2set=ercode;
+
+  ercode=bmap_ops.set(DATA_BMAP, inode2set, 1);
 
   // Dont forget to update the size, if it has increased :-)
   /*** TODO ***/

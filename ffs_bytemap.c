@@ -107,7 +107,7 @@ static void bytemap_mount(struct super *sb)
   bmapMD[INODE_BMAP].BMentries = entriesLeft;
 
   blockStart = super_ops.getStartDtBmap(sb);
-  blockEnd = blockStart + super_ops.getSizeDtBmap(sb) - 1;
+  blockEnd = blockStart + super_ops.getSizeDtBmap(sb);
   entriesLeft = super_ops.getNclusters(sb);
   bmapMD[DATA_BMAP].BMbStart = blockStart;
   bmapMD[DATA_BMAP].BMbEnd = blockEnd;

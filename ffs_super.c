@@ -27,21 +27,20 @@ void super_debug(struct IMsuper *imSB, unsigned int dbg);
       size of a cluster (clusterSize)
      @out: none
  ***/
-static void super_create(struct super *sb, unsigned int nblocks,
-                         unsigned int sizeInArea, unsigned int clusterSize)
+static void super_create(struct super *sb, unsigned int nblocks, unsigned int sizeInArea, unsigned int clusterSize)
 {
     sb->fsmagic = FS_MAGIC;
     sb->nblocks = nblocks;
     sb->startInBmap = BMi_OFFSET;
     sb->sizeInBmap = 1;
-    sb->startInArea = SB_OFFSET + 2;
+    sb->startInArea = BMi_OFFSET + sizeInArea;
     sb->sizeInArea = sizeInArea;
     sb->ninodes = (INODES_PER_BLK * sizeInArea);
-    sb->startDtBmap = SB_OFFSET + 2 + sizeInArea;
-    sb->sizeDtBmap = 1;
+    sb->startDtBmap = BMi_OFFSET + sizeInArea + sizeInArea;
+    sb->sizeDtBmap = (((nblocks - BMi_OFFSET + sizeInArea + sizeInArea) / clusterSize) + DISK_BLOCK_SIZE - 1) / DISK_BLOCK_SIZE;
     sb->clusterSize = clusterSize;
-    sb->startDtArea = SB_OFFSET + 2 + sizeInArea + 1;
-    sb->nclusters = ((nblocks - (SB_OFFSET + 2 + sizeInArea) - 1) / clusterSize);
+    sb->startDtArea = BMi_OFFSET + sizeInArea + sizeInArea + sb->sizeDtBmap;
+    sb->nclusters = ((nblocks -  (BMi_OFFSET + sizeInArea + sizeInArea + sb->sizeDtBmap)) / clusterSize); 
     sb->mounted = NOTMOUNTED;
 }
 
