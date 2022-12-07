@@ -126,7 +126,7 @@ void run_F(int argc, char* args[]) {
   }
 
   printf("%s %s\t%s\t%s\tFormatting...\n", args[0], args[1], args[2], args[3]);
-  format( args[1], sizeInArea, clusterSize );
+  bfs_format( args[1], sizeInArea, clusterSize );
 }
 
 

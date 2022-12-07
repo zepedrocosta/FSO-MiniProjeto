@@ -27,6 +27,7 @@ extern struct bytemap_operations bmap_ops;
 
 #ifndef FFS_FILE_H
 #include "ffs_file.h"
+#include <stdio.h> //para prints
 #endif
 
 #define CLUSTER_SIZE		( super_ops.getClusterSize(&ffs_IMsb.sb) )
@@ -55,16 +56,18 @@ static void ffs_file_mount(){
      from bytemap, inode operations
      errors from disk driver						***/
 
-static int ffs_file_create( unsigned char type ) {
+static int ffs_file_create( unsigned char type ) { //NÃO MUDAR (FEITO PELOS STORES)
   int ercode;
 
   // get the inode entry for this file
   ercode=bmap_ops.getfree(INODE_BMAP);
+
   if (ercode < 0) return ercode;
   unsigned int inode2set=ercode;
 
   // mark the inode entry for this file
   ercode=bmap_ops.set(INODE_BMAP, inode2set, 1);
+
   if (ercode < 0) return ercode; // This would be a bug!
 
   // create the data in an "empty" i-node
@@ -75,7 +78,6 @@ static int ffs_file_create( unsigned char type ) {
   // save it to disk without disturbing other i-nodes
   ercode=inode_ops.update(inode2set, &ino);
   if (ercode < 0) return ercode; // This would be a bug!
-
   return inode2set;
  }
 
@@ -93,19 +95,22 @@ static int ffs_file_unlink(const unsigned int inoNbr) {
   struct inode ino;
 
   // Read the inode
-  ercode=  /*** TODO ***/ ;
+  ercode= inode_ops.read(inoNbr, &ino);
   if (ercode < 0) return ercode;
 
   ino.nlinks--;
   if (ino.nlinks) {
-    ercode=  /*** TODO ***/ ;	   // Update the inode
+    ercode=  inode_ops.update(inoNbr, &ino);	   // Update the inode
     if (ercode < 0) return ercode; // This would be a bug!
     return 0;
   }
 
   // FIRST, "delete" all the data blocks
   // NOTE: just the direct pointers, no need to support for the indirect
-   /*** TODO ***/ 
+  
+  for(int i = 0; i < DIVUP(ino.size, DISK_BLOCK_SIZE); i++){
+    memset(&ino.dptr[i], 0, sizeof(struct inode)); //duvidaaa
+  }
 
   // NOW, we can clear the inode
   memset(&ino, 0, sizeof(struct inode) );
@@ -237,17 +242,18 @@ static int ffs_file_write(const int fd, const void *buffer,\
 
   // Compute the logical block number of the file from fpos and len
   /*** TODO ***/
+  fileBlkNbr = LBLK_NBR((fpos + len - 1));
  
   // Then, see if the dptr pointer for that block is already used
   // if not, allocate a new block (a cluster!) for use in dptr
   /*** TODO ***/
-
+  
   // now write the block, but remember: you should convert the
   // logical block number into a physical block number 
   /*** TODO ***/
 
   // Write the Block!
-  ercode=disk_ops.write( /*** TODO ***/, buffer, CLUSTER_SIZE );
+  ercode=disk_ops.write(L2P(openFT[fd].IMino.ino.dptr[fileBlkNbr]), buffer, CLUSTER_SIZE );
   if (ercode < 0) return ercode; // This would be a bug!
 
   // Dont forget to update the bmap, if a new cluster was allocated

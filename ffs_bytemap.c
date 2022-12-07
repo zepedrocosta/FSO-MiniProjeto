@@ -99,7 +99,6 @@ int bytemap_print_table(unsigned int bmapIDX)
 static void bytemap_mount(struct super *sb)
 {
   unsigned int blockStart, blockEnd, entriesLeft;
-
   blockStart = super_ops.getStartInBmap(sb);
   blockEnd = blockStart + super_ops.getSizeInBmap(sb) - 1;
   entriesLeft = super_ops.getTotalInodes(sb);
@@ -114,175 +113,168 @@ static void bytemap_mount(struct super *sb)
   bmapMD[DATA_BMAP].BMbEnd = blockEnd;
   bmapMD[DATA_BMAP].BMentries = entriesLeft;
 }
+  /***
+  ummount: clears the bytemap in-memory structure. Must be called by
+           for multiple mount/umounts in the same run                   ***/
 
-/***
-   getfree: first-fit get one free entry
-     parameters:
-       @in: bmapIDX (which bmap to access)
-     returns:
-       position of the 1st free entry
-     errors:
-       -ENOSPC there are no free entries
-       those resulting from disk operations
-***/
-static int bytemap_getfree(unsigned int bmapIDX)
-{
-  int ercode;
-  unsigned char bmap[DISK_BLOCK_SIZE];
-
-  unsigned int block, blockStart, blockEnd, entriesLeft;
-  unsigned int freeEntry = 0;
-
-  if (bmapIDX == INODE_BMAP)
+  static void bytemap_umount()
   {
-    blockStart = bmapMD[INODE_BMAP].BMbStart;
-    blockEnd = blockStart + super_ops.getSizeInBmap(&ffs_IMsb.sb) - 1;
-    entriesLeft = super_ops.getTotalInodes(&ffs_IMsb.sb);
-  }
-  else
-  {
-    blockStart = super_ops.getStartDtBmap(&ffs_IMsb.sb);
-    blockEnd = blockStart + super_ops.getSizeDtBmap(&ffs_IMsb.sb) - 1;
-    entriesLeft = super_ops.getNclusters(&ffs_IMsb.sb);
+    memset(bmapMD, 0, sizeof(struct bmapMData) * NBR_OF_BMAPS);
   }
 
-  for (block = blockStart; block <= blockEnd; block++)
+  /***
+     getfree: first-fit get one free entry
+       parameters:
+         @in: bmapIDX (which bmap to access)
+       returns:
+         position of the 1st free entry
+       errors:
+         -ENOSPC there are no free entries
+         those resulting from disk operations
+  ***/
+  static int bytemap_getfree(unsigned int bmapIDX)
   {
-    ercode = disk_ops.read(block, bmap, 1);
-    if (ercode < 0)
-      return ercode;
+    int ercode;
+    unsigned char bmap[DISK_BLOCK_SIZE];
 
-    /*** TODO find a free entry and, if found, return it ***/
+    unsigned int block, blockStart, blockEnd, entriesLeft;
+    unsigned int freeEntry = 0;
+
     if (bmapIDX == INODE_BMAP)
     {
-      for (int i = 0; i <= DISK_BLOCK_SIZE; i += INODE_SIZE)
-      {
-        if (bmap[i] == 0)
-        {
-          freeEntry = bmap[i];
-        }
-      }
+      blockStart = bmapMD[INODE_BMAP].BMbStart;
+      blockEnd = bmapMD[INODE_BMAP].BMbEnd;
+      entriesLeft = bmapMD[INODE_BMAP].BMentries;
     }
     else
     {
-      for (int i = 0; i <= DISK_BLOCK_SIZE; i += ffs_IMsb.sb.clusterSize)
+      blockStart = bmapMD[DATA_BMAP].BMbStart;
+      blockEnd = bmapMD[DATA_BMAP].BMbEnd;
+      entriesLeft = bmapMD[DATA_BMAP].BMentries;
+    }
+
+    for (block = blockStart; block <= blockEnd; block++)
+    {
+      ercode = disk_ops.read(block, bmap, 1);
+      if (ercode < 0)
+        return ercode;
+
+      /*** TODO find a free entry and, if found, return it ***/
+      for (int i = 0; i <= entriesLeft; i++)
       {
-        if (bmap[i] == 0)
+        if (bmap[i] == FREE)
         {
-          freeEntry = bmap[i];
+          freeEntry = i;
+          return freeEntry;
         }
       }
+      entriesLeft -= MIN(entriesLeft, DISK_BLOCK_SIZE);
     }
-    return freeEntry;
+
+    assert(entriesLeft == 0);
+    return -ENOSPC;
   }
 
-  assert(entriesLeft == 0);
-  return -ENOSPC;
-}
-
-/***
-   set: set a bytemap entry to a value and updates disk block
-     parameters:
-       @in: bmapIDX (which bmap to access), entry absolute address
-    value
-     returns:
-       0 on success
-     errors:
-       -EINVAL entry address invalid
-       those resulting from disk operations
-***/
-static int bytemap_set(unsigned int bmapIDX, unsigned int entry,
-                       unsigned char set)
-{
-  int ercode;
-  unsigned char bmap[DISK_BLOCK_SIZE];
-
-  unsigned int blockStart, blockEnd, entriesLeft;
-
-  if (bmapIDX == INODE_BMAP)
+  /***
+     set: set a bytemap entry to a value and updates disk block
+       parameters:
+         @in: bmapIDX (which bmap to access), entry absolute address
+      value
+       returns:
+         0 on success
+       errors:
+         -EINVAL entry address invalid
+         those resulting from disk operations
+  ***/
+  static int bytemap_set(unsigned int bmapIDX, unsigned int entry, unsigned char set)
   {
-    blockStart = super_ops.getStartInBmap(&ffs_IMsb.sb);
-    blockEnd = blockStart + super_ops.getSizeInBmap(&ffs_IMsb.sb) - 1;
-    entriesLeft = super_ops.getTotalInodes(&ffs_IMsb.sb);
-  }
-  else
-  {
-    blockStart = super_ops.getStartDtBmap(&ffs_IMsb.sb);
-    blockEnd = blockStart + super_ops.getSizeDtBmap(&ffs_IMsb.sb) - 1;
-    entriesLeft = super_ops.getNclusters(&ffs_IMsb.sb);
-  }
+    int ercode;
+    unsigned char bmap[DISK_BLOCK_SIZE];
 
-  if (entry >= entriesLeft)
-    return -EINVAL;
+    unsigned int blockStart, blockEnd, entriesLeft;
 
-  // Locate the block where the entry is stored
-  unsigned int block;
-  if (bmapIDX == INODE_BMAP)
-  {
-    block = (double) entry / (double) INODES_PER_BLK;
-  } else {
-    block = (double) entry / (double) DISK_BLOCK_SIZE;
-  }
-  // Read the block
-  ercode = disk_ops.read((block + blockStart), bmap, 1);
-  if (ercode < 0)
-    return ercode;
+    if (bmapIDX == INODE_BMAP)
+    {
+      blockStart = bmapMD[INODE_BMAP].BMbStart;
+      blockEnd = bmapMD[INODE_BMAP].BMbEnd;
+      entriesLeft = bmapMD[INODE_BMAP].BMentries;
+    }
+    else
+    {
+      blockStart = bmapMD[DATA_BMAP].BMbStart;
+      blockEnd = bmapMD[DATA_BMAP].BMbEnd;
+      entriesLeft = bmapMD[DATA_BMAP].BMentries;
+    }
 
-  // Compute the entry's offset within the block and set its value
-  unsigned int offset = (entry % DISK_BLOCK_SIZE);
-  bmap[offset] = set;
+    if (entry >= entriesLeft)
+      return -EINVAL;
+    
+    // Locate the block where the entry is stored
+    unsigned int block = entry / DISK_BLOCK_SIZE;
+    if (block > (blockEnd - blockStart))
+      return -EINVAL;
 
-  // Write back the changed value
-  ercode = disk_ops.write((block + blockStart), bmap, 1);
-  if (ercode < 0)
-    return ercode;
-
-  return 0;
-}
-
-/***
-   clear: clears the full  bytemap zone blocks (used in format())
-     parameters:
-       @in: bmapIDX (which bmap to access)
-     returns:
-       0 on success
-     errors:
-       those resulting from disk operations
-***/
-static int bytemap_clear(unsigned int bmapIDX, struct super *sb)
-{
-  int ercode;
-  unsigned char bmap[DISK_BLOCK_SIZE];
-
-  unsigned int block, blockStart, blockEnd;
-
-  // NOTE: when format()ing, the disk is NOT mounted yet...
-  //	   however, the in-mem superblock is already populated
-  //	  CAVEAT: That's only true if super_ops.create is executed FIRST
-  if (bmapIDX == INODE_BMAP)
-  {
-    blockStart = super_ops.getStartInBmap(sb);
-    blockEnd = blockStart + super_ops.getSizeInBmap(sb) - 1;
-  }
-  else
-  {
-    blockStart = super_ops.getStartDtBmap(sb);
-    blockEnd = blockStart + super_ops.getSizeDtBmap(sb) - 1;
-  }
-
-  memset(bmap, FREE, DISK_BLOCK_SIZE);
-  for (block = blockStart; block <= blockEnd; block++)
-  {
-    ercode = disk_ops.write(block, bmap, 1);
+    // Read the block
+    ercode = disk_ops.read((block + blockStart), bmap, 1);
     if (ercode < 0)
       return ercode;
+
+    // Compute the entry's offset within the block and set its value
+    unsigned int offset = (entry % DISK_BLOCK_SIZE);
+    bmap[offset] = set;
+
+    // Write back the changed value
+    ercode = disk_ops.write((block + blockStart), bmap, 1);
+    if (ercode < 0)
+      return ercode;
+
+    return 0;
   }
 
-  return 0;
-}
+  /***
+     clear: clears the full  bytemap zone blocks (used in format())
+       parameters:
+         @in: bmapIDX (which bmap to access)
+       returns:
+         0 on success
+       errors:
+         those resulting from disk operations
+  ***/
+  static int bytemap_clear(unsigned int bmapIDX, struct super *sb)
+  {
+    int ercode = 0;
+    unsigned char bmap[DISK_BLOCK_SIZE];
 
-struct bytemap_operations bmap_ops = {
-    .mount = bytemap_mount,
-    .getfree = bytemap_getfree,
-    .set = bytemap_set,
-    .clear = bytemap_clear};
+    unsigned int block, blockStart, blockEnd;
+
+    // NOTE: when format()ing, the disk is NOT mounted yet...
+    //	   however, the in-mem superblock is already populated
+    //	  CAVEAT: That's only true if super_ops.create is executed FIRST
+    if (bmapIDX == INODE_BMAP)
+    {
+      blockStart = super_ops.getStartInBmap(sb);
+      blockEnd = blockStart + super_ops.getSizeInBmap(sb) - 1;
+    }
+    else
+    {
+      blockStart = super_ops.getStartDtBmap(sb);
+      blockEnd = blockStart + super_ops.getSizeDtBmap(sb) - 1;
+    }
+
+    memset(bmap, FREE, DISK_BLOCK_SIZE);
+    for (block = blockStart; block <= blockEnd; block++)
+    {
+      ercode = disk_ops.write(block, bmap, 1);
+      if (ercode < 0)
+        return ercode;
+    }
+
+    return 0;
+  }
+
+  struct bytemap_operations bmap_ops = {
+      .mount = bytemap_mount,
+      .umount = bytemap_umount,
+      .getfree = bytemap_getfree,
+      .set = bytemap_set,
+      .clear = bytemap_clear};

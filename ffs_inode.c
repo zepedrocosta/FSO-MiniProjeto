@@ -15,15 +15,14 @@ extern struct disk_operations disk_ops;
 /* inode (global) number is decomposed into inode block number
    and offset within that block. The inode block number starts at 0
 */
-static int inode_location(unsigned int numinode,
-                          unsigned int *numblock, unsigned int *offset)
+static int inode_location(unsigned int numinode, unsigned int *numblock, unsigned int *offset)
 {
-
-  if (numinode >= super_ops.getTotalInodes)
+  if (numinode >= super_ops.getTotalInodes(&ffs_IMsb.sb)){
+    printf("%d       ararrra\n", super_ops.getTotalInodes(&ffs_IMsb.sb));
     return -EINVAL;
-
+  }
   *numblock = numinode / INODES_PER_BLK;
-  *offset = numinode - (INODES_PER_BLK * (*numblock));
+  *offset = numinode % INODES_PER_BLK;
 
   return 0;
 }
@@ -101,7 +100,7 @@ static void inode_init(struct inode *in)
     errors:
      those resulting from disk operations
 ***/
-static int inode_update(const unsigned int numinode, const struct inode *in) // com erros provavelmente
+static int inode_update(const unsigned int numinode, const struct inode *in)
 {
   int ercode;
   unsigned int block, offset;
@@ -111,7 +110,7 @@ static int inode_update(const unsigned int numinode, const struct inode *in) // 
     return -EINVAL;
 
   // read inode block from disk into local mem
-  ercode = disk_ops.read(block, &i_b.data, 1);
+  ercode = disk_ops.read(block, i_b.data, 1);
   if (ercode < 0)
     return ercode;
 
@@ -119,7 +118,7 @@ static int inode_update(const unsigned int numinode, const struct inode *in) // 
   memcpy(&i_b.ino[offset], in, INODE_SIZE);
 
   // write inode block to disk
-  ercode = disk_ops.write(block, &i_b.data, 1);
+  ercode = disk_ops.write(block, i_b.data, 1);
   if (ercode < 0)
     return ercode;
 
@@ -144,7 +143,7 @@ static int inode_read(unsigned int numinode, struct inode *in)
     return -EINVAL;
 
   // read inode block from disk into local mem
-  ercode = disk_ops.read(block, &i_b.data, 1);
+  ercode = disk_ops.read(block, i_b.data, 1);
   if (ercode < 0)
     return ercode;
 

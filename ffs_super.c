@@ -36,7 +36,7 @@ static void super_create(struct super *sb, unsigned int nblocks,
     sb->sizeInBmap = 1;
     sb->startInArea = SB_OFFSET + 2;
     sb->sizeInArea = sizeInArea;
-    sb->ninodes = INODES_PER_BLK * sizeInArea;
+    sb->ninodes = (INODES_PER_BLK * sizeInArea);
     sb->startDtBmap = SB_OFFSET + 2 + sizeInArea;
     sb->sizeDtBmap = 1;
     sb->clusterSize = clusterSize;
@@ -60,7 +60,7 @@ static int super_read(struct super *sb)
     if (ercode < 0)
         return ercode;
 
-    memcpy(&sb, &sb_u.sb, sizeof(struct super));
+    memcpy(sb, &sb_u.sb, sizeof(struct super));
     return 0;
 }
 
@@ -76,7 +76,7 @@ static int super_write(struct super *sb)
     int ercode;
 
     memset(sb_u.data, 0, DISK_BLOCK_SIZE); // clean...
-    memcpy(&sb, &sb_u.sb, sizeof(struct super));
+    memcpy(sb_u.data, sb, sizeof(struct super));
 
     ercode = disk_ops.write(SB_OFFSET, sb_u.data, 1);
     if (ercode < 0)
@@ -98,7 +98,7 @@ static int super_mount(char *diskname, struct IMsuper *imSB, int debug)
 {
     int ercode;
 
-    ercode = disk_ops.open(diskname, imSB->sb.nblocks);
+    ercode = disk_ops.open(diskname, 0);
     if (ercode < 0)
         return ercode;
 
@@ -118,7 +118,7 @@ static int super_mount(char *diskname, struct IMsuper *imSB, int debug)
         super_debug(imSB, 1); // Debug after mounting
 
     // *** TODO *** In future these should be in the mount() library call, not here...
-    bmap_ops.mount(&imSB->sb); // in-mem bmap infos: start, size, n.entries
+    //bmap_ops.mount(&imSB->sb); // in-mem bmap infos: start, size, n.entries
 
     return 0;
 }
@@ -134,7 +134,7 @@ static int super_umount(struct IMsuper *imSB)
 {
     int ercode;
 
-    imSB->sb.mounted = 0;
+    imSB->sb.mounted = NOTMOUNTED;
     ercode = super_write(&imSB->sb);
     if (ercode < 0)
         return ercode;
