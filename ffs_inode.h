@@ -28,6 +28,7 @@ struct inode {
 // in-memory inode
 struct IMinode {
     struct inode ino;
+    unsigned int inNbr;
     unsigned int dirty;
 };
 
