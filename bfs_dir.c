@@ -180,11 +180,16 @@ int bfs_dir_umount(struct IMdirectory *cwd)
 
 int bfs_dir_readdir(struct IMdirectory *cwd, struct dentry *dirent)
 {
-
   if (cwd->dirPos < 0)
     return (cwd->dirPos); // Already at end
 
-  /*** TODO ***/
+  memcpy(dirent, &cwd->dirBuf[cwd->dirPos].buf, sizeof(struct dentry));
+  cwd->dirPos++;
+
+  unsigned int size = openFT[cwd->fd].IMino.ino.size;
+  
+  if(cwd->dirPos > size)
+    cwd->dirPos = -1;
 
   return (cwd->dirPos);
 }

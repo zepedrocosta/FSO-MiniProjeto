@@ -50,7 +50,7 @@ static int disk_stat_nc() {
 
 static int disk_read_nc(unsigned int blknmbr, unsigned char *buf, unsigned int reqblocks) {
     if (theDisk.dfd == -1) return -ENODEV;
-    if (blknmbr + reqblocks >= theDisk.nblocks) return -ENOSPC;
+    if (blknmbr + reqblocks >= theDisk.nblocks) return -ENOSPC; // entra neste erro
     if (lseek(theDisk.dfd, blknmbr * DISK_BLOCK_SIZE, SEEK_SET) == -1) return -1;
     if (read(theDisk.dfd, buf, DISK_BLOCK_SIZE * reqblocks) < DISK_BLOCK_SIZE * reqblocks) return -1;
 
