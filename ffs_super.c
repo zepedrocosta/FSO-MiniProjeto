@@ -142,8 +142,6 @@ static int super_umount(struct IMsuper *imSB)
     if (ercode < 0)
         return ercode;
 
-    memset(imSB, 0, sizeof(struct IMsuper));
-
     return 0;
 }
 

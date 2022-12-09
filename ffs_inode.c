@@ -21,7 +21,7 @@ static int inode_location(unsigned int numinode, unsigned int *numblock, unsigne
     printf("%d       ararrra\n", super_ops.getTotalInodes(&ffs_IMsb.sb));
     return -EINVAL;
   }
-  *numblock = numinode / INODES_PER_BLK;
+  *numblock = (numinode / INODES_PER_BLK) + ffs_IMsb.sb.startInArea;
   *offset = numinode % INODES_PER_BLK;
 
   return 0;
